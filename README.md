@@ -3,11 +3,11 @@
 </p>
 
 <h1 align="center">
-  <img src="https://img.shields.io/badge/NEVELOOPP-v2.0-00ff00?style=for-the-badge&logo=ghost&logoColor=white" alt="Neveloopp v2" />
+  <img src="https://img.shields.io/badge/DvWilkerOFC-v1.0-00ff00?style=for-the-badge&logo=ghost&logoColor=white" alt="DvWilkerOFC v1" />
 </h1>
 
 <h3 align="center">
-  <i>By Dev Neveloopp</i>
+  <i>By Dev Wilker</i>
 </h3>
 
 ---
