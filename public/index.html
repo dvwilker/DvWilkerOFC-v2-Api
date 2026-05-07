@@ -35,7 +35,7 @@
             transition: background-color var(--transition), color var(--transition);
         }
 
-        /* Header Estilo Alya */
+        /* Header Estilo Gohan hack */
         header {
             background: rgba(12, 12, 20, 0.8);
             backdrop-filter: blur(15px);
@@ -392,7 +392,7 @@
 <body>
 
     <header>
-        <div class="brand"><i class="fas fa-microchip" style="color: var(--neon-blue);"></i> KAZUMA <span>API</span></div>
+        <div class="brand"><i class="fas fa-microchip" style="color: var(--neon-blue);"></i> DvWilkerOFC <span>API</span></div>
         <div class="header-icons">
             <div class="btn-circle" onclick="toggleTheme()" id="theme-btn">
                 <i class="fas fa-moon"></i>
@@ -418,7 +418,7 @@
         <div class="hero-shape"></div>
         <div class="hero-card">
             <div class="hero-card-inner">
-                <img src="https://files.catbox.moe/9ssbf9.jpg" alt="DvWilkerOFCBanner">
+                <img src="https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg" alt="DvWilkerOFCBanner">
                 <div class="status-badge">
                     <div class="dot"></div>
                     Api activa 24/7
@@ -464,7 +464,7 @@
     <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-shield-virus"></i></div>
         <div class="feature-info">
-            <h3>Seguridad KZM</h3>
+            <h3>Seguridad DvW</h3>
             <p>ApiKey única para cada una de tus solicitudes.</p>
         </div>
     </div>
@@ -472,7 +472,7 @@
     <div class="section-label">Desarrollador Principal</div>
 
     <div class="dev-section">
-        <img src="https://files.catbox.moe/9ssbf9.jpg" class="dev-avatar" alt="Felix Ofc">
+        <img src="https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169555425-IMG-20260507-WA0354.jpg" class="dev-avatar" alt="Felix Ofc">
         <h2 class="dev-name">Te king Wilker</h2>
         <span class="dev-tag">System Admin & Dev</span>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 15px;">
@@ -509,17 +509,17 @@
 
             if (body.classList.contains('light-mode')) {
                 icon.classList.replace('fa-moon', 'fa-sun');
-                localStorage.setItem('kazuma-theme', 'light');
+                localStorage.setItem('dvwilker-theme', 'light');
             } else {
                 icon.classList.replace('fa-sun', 'fa-moon');
-                localStorage.setItem('kazuma-theme', 'dark');
+                localStorage.setItem('dvwilker-theme', 'dark');
             }
         }
 
         // Cargar estadísticas y tema guardado al iniciar
         async function initPage() {
             // 1. Verificar tema guardado
-            const savedTheme = localStorage.getItem('kazuma-theme');
+            const savedTheme = localStorage.getItem('dvwilker-theme');
             if (savedTheme === 'light') {
                 document.body.classList.add('light-mode');
                 document.getElementById('theme-btn').querySelector('i').classList.replace('fa-moon', 'fa-sun');
