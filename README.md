@@ -28,5 +28,5 @@ Proyecto desarrollado por Dev Wilker
 <br>
 
 <p align="center">
-  <img src="https://api-gohan.onrender.com/ghpvc/?username=GohanApi&label=Visitas&color=00ff00&style=flat" alt="Contador de visitas" />
+  <img src="https://komarev.com/ghpvc/?username=dvwilker&label=Visitas&color=00ff00&style=flat" alt="Contador de visitas" />
 </p>
