@@ -166,11 +166,11 @@
             body.classList.toggle('light-mode');
             const isLight = body.classList.contains('light-mode');
             icon.classList.replace(isLight ? 'fa-moon' : 'fa-sun', isLight ? 'fa-sun' : 'fa-moon');
-            localStorage.setItem('kazuma-theme', isLight ? 'light' : 'dark');
+            localStorage.setItem('dvwilker-theme', isLight ? 'light' : 'dark');
         }
 
         async function loadProfile() {
-            if (localStorage.getItem('kazuma-theme') === 'light') toggleTheme();
+            if (localStorage.getItem('dvwilker-theme') === 'light') toggleTheme();
 
             grecaptcha.ready(() => {
                 grecaptcha.execute('6Lfw-dwsAAAAACc6y5K4sfFnplSqbskYPia1ADh5', {action: 'profile_load'});
