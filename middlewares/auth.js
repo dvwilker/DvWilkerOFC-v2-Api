@@ -33,7 +33,7 @@ const authHandler = (req, res, next) => {
     if (user.requestToday >= user.limit) {
         return res.status(429).json({
             status: false,
-            creator: "Te king Wilker",
+            creator: "The king Wilker",
             message: `Límite diario alcanzado (${user.limit}). Mejora tu plan en DvWilkerOFC v1.`
         });
     }
