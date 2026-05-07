@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kazuma API | Registro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        :root { 
+            --neon-blue: #00f3ff; 
+            --dark-bg: #0d0d0d; 
+            --card-bg: #161625; 
+            --text-main: #ffffff;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.light-mode {
+            --dark-bg: #f4f4f9;
+            --card-bg: #ffffff;
+            --text-main: #1a1a1a;
+        }
+
+        body { 
+            background: var(--dark-bg); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* Pantalla de seguridad absoluta (Negro puro) */
+        #safety-overlay { 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; 
+            z-index: 9999; 
+        }
+
+        .glass { 
+            background: var(--card-bg); 
+            border: 1px solid rgba(0, 243, 255, 0.1); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            transition: background var(--transition), border var(--transition);
+        }
+
+        body.light-mode .glass {
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .input-kazuma { 
+            background: #080810; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: #ffffff !important; 
+            transition: 0.3s; 
+        }
+
+        body.light-mode .input-kazuma {
+            background: #fdfdfd;
+            border: 1px solid rgba(0,0,0,0.1);
+            color: #1a1a1a !important;
+        }
+
+        .input-kazuma:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        .btn-blue { background: var(--neon-blue); transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; font-weight: 900; color: #000; }
+        .btn-blue:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        .checkbox-container { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .checkbox-container input { display: none; }
+        .checkmark { height: 18px; width: 18px; background-color: #080810; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; position: relative; }
+        
+        body.light-mode .checkmark { background-color: #e5e7eb; border-color: #d1d5db; }
+        
+        .checkbox-container input:checked ~ .checkmark { background-color: var(--neon-blue); border-color: var(--neon-blue); }
+        .checkmark:after { content: ""; position: absolute; display: none; left: 6px; top: 2px; width: 5px; height: 10px; border: solid black; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .checkbox-container input:checked ~ .checkmark:after { display: block; }
+
+        .g-recaptcha { display: flex; justify-content: center; margin: 15px 0; }
+
+        .theme-btn-fixed {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 45px;
+            height: 45px;
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--neon-blue);
+            z-index: 1000;
+            transition: var(--transition);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div id="safety-overlay"></div>
+
+    <div class="theme-btn-fixed" onclick="toggleTheme()" id="theme-btn">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <div class="glass p-8 rounded-3xl w-full max-w-md my-8">
+        <div class="text-center mb-6">
+            <h2 class="text-3xl font-black tracking-tighter uppercase">NUEVO <span style="color: var(--neon-blue);">PROTOCOLO</span></h2>
+            <p class="text-slate-500 text-[10px] mt-1 uppercase font-bold tracking-widest">Crear Credenciales de Acceso</p>
+        </div>
+
+        <form id="registerForm" class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">Username</label>
+                <input type="text" id="username" class="input-kazuma w-full rounded-xl p-3 outline-none" placeholder="Usuario123" required>
+            </div>
+            <div>
+                <label class="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">Email</label>
+                <input type="email" id="email" class="input-kazuma w-full rounded-xl p-3 outline-none" placeholder="correo@ejemplo.com" required>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">Password</label>
+                    <input type="password" id="password" class="input-kazuma w-full rounded-xl p-3 outline-none" placeholder="••••" required>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">Confirmar</label>
+                    <input type="password" id="confirmPassword" class="input-kazuma w-full rounded-xl p-3 outline-none" placeholder="••••" required>
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="tos" required>
+                    <span class="checkmark"></span>
+                    <span class="text-slate-400 text-[11px] uppercase font-bold tracking-tight">
+                        Acepto los <a href="/tos/terms" class="font-black" style="color: var(--neon-blue);">términos y condiciones</a>
+                    </span>
+                </label>
+            </div>
+
+            <div class="g-recaptcha" data-sitekey="6Lcz9dwsAAAAAMJ3mdr0wYqws6j7eys_hNdMDKcj" data-theme="dark"></div>
+
+            <button type="submit" id="btnSubmit" class="btn-blue w-full py-4 rounded-xl shadow-lg mt-2 font-black">
+                Registrar Cuenta
+            </button>
+        </form>
+
+        <div class="mt-6 flex flex-col gap-3 text-center border-t border-white/5 pt-4">
+            <p class="text-slate-500 text-sm">¿Ya tienes cuenta? <a href="/login" class="font-bold" style="color: var(--neon-blue);">Inicia Sesión</a></p>
+            <a href="mailto:pixelcrewteam@gmail.com" class="py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition bg-white/5 text-slate-400 hover:text-white border border-white/10 uppercase tracking-widest">
+                <i class="fas fa-question-circle"></i> Necesitas Ayuda
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const themeBtn = document.getElementById('theme-btn');
+            const icon = themeBtn.querySelector('i');
+            body.classList.toggle('light-mode');
+            if (body.classList.contains('light-mode')) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('kazuma-theme', 'light');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('kazuma-theme', 'dark');
+            }
+        }
+
+        // Blindaje de Seguridad Instantáneo
+        (function initialCheck() {
+            const user = localStorage.getItem('kazuma_user');
+            const savedTheme = localStorage.getItem('kazuma-theme');
+
+            // Cargar Tema
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('theme-btn').querySelector('i').classList.replace('fa-moon', 'fa-sun');
+            }
+
+            // Si hay sesión, redirección directa a Dash (Overlay permanece negro)
+            if (user) {
+                window.location.href = '/dash';
+            } else {
+                // Solo si no hay sesión, mostramos el contenido tras cargar
+                window.onload = () => { 
+                    document.getElementById('safety-overlay').style.display = 'none'; 
+                };
+            }
+        })();
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const captchaResponse = grecaptcha.getResponse();
+            if (!captchaResponse) {
+                return Swal.fire({ title: 'Seguridad', text: 'Resuelve el CAPTCHA', icon: 'warning', background: 'var(--card-bg)', color: 'var(--text-main)' });
+            }
+
+            const pass = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+
+            if (pass !== confirm) {
+                return Swal.fire({ title: 'Error', text: 'Las contraseñas no coinciden', icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
+            }
+
+            const btn = document.getElementById('btnSubmit');
+            btn.disabled = true;
+            btn.innerText = 'PROCESANDO...';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        email: document.getElementById('email').value,
+                        password: pass,
+                        captcha: captchaResponse
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.status) {
+                    Swal.fire({
+                        title: 'REGISTRO EXITOSO',
+                        html: `<p>Tu cuenta ha sido creada.</p><br><p style="color:var(--neon-blue); font-weight:bold; font-size:12px;">TU API KEY: ${data.key}</p>`,
+                        icon: 'success',
+                        background: 'var(--card-bg)',
+                        color: 'var(--text-main)',
+                        confirmButtonText: 'IR AL DASHBOARD',
+                        confirmButtonColor: '#00f3ff'
+                    }).then(() => {
+                        // Una vez registrado, activamos la pantalla negra y vamos a Dash
+                        document.getElementById('safety-overlay').style.display = 'block';
+                        window.location.href = '/dash';
+                    });
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
+                    btn.disabled = false;
+                    btn.innerText = 'Registrar Cuenta';
+                    grecaptcha.reset();
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = 'Registrar Cuenta';
+                grecaptcha.reset();
+                Swal.fire({ title: 'Error', text: 'Fallo al conectar con el servidor', icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
+            }
+        });
+    </script>
+</body>
+</html>
