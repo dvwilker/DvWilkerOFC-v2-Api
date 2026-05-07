@@ -1,5 +1,5 @@
 {
-  "name": "felix-api-pro",
+  "name": "DvWilkerOFC-V1",
   "version": "1.0.0",
   "description": "API Multi-herramientas con Scrapers Avanzados y Seguridad",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "downloader",
     "vps"
   ],
-  "author": "Félix Ofc",
+  "author": "DvWilkerOFCv1",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
