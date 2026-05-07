@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "==========================================="
-echo "   KAZUMA API - INSTALADOR AUTOMÁTICO      "
+echo "   DVWILKER API - INSTALADOR AUTOMÁTICO      "
 echo "==========================================="
 
 read -p "Ingresa el dominio para tu API (ej: api.tudominio.com): " DOMAIN
@@ -26,7 +26,7 @@ sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
 echo "y" | sudo ufw enable
 
-cat <<EOF | sudo tee /etc/nginx/sites-available/kazuma-api
+cat <<EOF | sudo tee /etc/nginx/sites-available/dvwilker-api
 server {
     listen 80;
     server_name $DOMAIN;
@@ -50,7 +50,7 @@ sudo nginx -t && sudo systemctl restart nginx
 
 sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --m frasesbebor@gmail.com
 
-pm2 start index.js --name "kazuma-api"
+pm2 start index.js --name "dvwilker-api"
 pm2 save
 pm2 startup
 
