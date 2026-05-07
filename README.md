@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=00FF00&center=true&vCenter=true&width=435&lines=¡Hola!+👋;Bienvenido+a+Neveloopp+v2" alt="Animación de saludo" />
+  <img src="https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&color=00FF00&center=true&vCenter=true&width=435&lines=¡Hola!+👋;Bienvenido+a+DvWilkerOFC+v1" alt="Animación de saludo" />
 </p>
 
 <h1 align="center">
@@ -15,7 +15,7 @@
 ## 📖 Documentación del Proyecto
 
 ### 👨‍💻 Desarrollador
-**Dev Wilker** ha desarrollado este proyecto con ayuda de otro desarrollador De Felix.
+**Dev Wilker** ha desarrollado este proyecto con ayuda de otro desarrollador Dev Felix.
 
 ---
 
