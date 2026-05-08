@@ -2,12 +2,11 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { authHandler } = require('./middlewares/auth');
-const mongoose = require('mongoose'); // 👈 Agregado
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3032;
 
-// 👈 Conexión a MongoDB (la misma que en users.js)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://DvWilkerOFC:dvwilker15@dvwilker15.xndilqb.mongodb.net/?appName=dvwilker15';
 const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
 
@@ -16,7 +15,7 @@ mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
     useUnifiedTopology: true
 }).then(() => {
     console.log('✅ Conectado a MongoDB Atlas');
-    global.startTime = Date.now(); // 👈 Para el uptime
+    global.startTime = Date.now();
 }).catch(err => console.error('❌ Error MongoDB:', err));
 
 app.set('trust proxy', 1);
@@ -33,8 +32,10 @@ const dlTw = require('./routes/download/twitter');
 const dlPin = require('./routes/download/pinterest');
 const dlTt = require('./routes/download/tiktok');
 const userAuth = require('./routes/users');
+const payments = require('./routes/payments'); // 👈 NUEVO
 
 app.use('/api/auth', userAuth);
+app.use('/api/payments', authHandler, payments); // 👈 NUEVO
 
 app.use('/api/ai/gemini', authHandler, aiGemini);
 app.use('/api/tools/qr', authHandler, toolQr);
