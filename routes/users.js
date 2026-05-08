@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
             limit: 100,
             requestToday: 0,
             totalRequest: 0,
-            profile_img: "https://upload.yotsuba.giize.com/u/oco-1ZRU.jpg", 
+            profile_img: "https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg", 
             lastRequestDate: new Date().toISOString().split('T')[0]
         };
 
