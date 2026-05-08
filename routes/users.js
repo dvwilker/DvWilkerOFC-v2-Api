@@ -5,21 +5,23 @@ const fs = require('fs');
 const path = require('path');
 const { generateKey } = require('../middlewares/auth');
 
-// Variables de entorno
+// ============== CONFIGURACIÓN ==============
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://zenith_agent:rx2CSutif3hgsjcy@dbzenithapi.sio7jth.mongodb.net/?appName=DBZenithAPI';
 const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
 
-// Leer admin desde JSON
+// Leer admin desde JSON (TU ADMIN ORIGINAL)
 const adminPath = path.join(__dirname, '../database/users.json');
 let adminUser = null;
 try {
-    adminUser = JSON.parse(fs.readFileSync(adminPath, 'utf-8'));
+    const adminData = JSON.parse(fs.readFileSync(adminPath, 'utf-8'));
+    // Si es array, tomamos el primero, si es objeto directo, lo usamos
+    adminUser = Array.isArray(adminData) ? adminData[0] : adminData;
     console.log('✅ Admin cargado desde JSON:', adminUser.username);
 } catch (err) {
     console.error('❌ Error cargando admin desde JSON:', err.message);
 }
 
-// Conectar a MongoDB (solo para usuarios normales)
+// Conectar a MongoDB solo para usuarios normales
 if (mongoose.connection.readyState === 0) {
     mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
         useNewUrlParser: true,
@@ -28,7 +30,7 @@ if (mongoose.connection.readyState === 0) {
       .catch(err => console.error('❌ Error MongoDB:', err));
 }
 
-// Esquema de Usuario (para usuarios normales)
+// Esquema para usuarios normales
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
@@ -46,7 +48,9 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// ============== REGISTRO (solo usuarios normales a MongoDB) ==============
+let startTime = Date.now();
+
+// ============== REGISTRO (solo para MongoDB) ==============
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
@@ -86,7 +90,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// ============== LOGIN (primero busca en JSON admin, luego en MongoDB) ==============
+// ============== LOGIN (primero admin del JSON, luego MongoDB) ==============
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -107,7 +111,7 @@ router.post('/login', async (req, res) => {
                     role: "admin",
                     plan: "ADMIN VIP",
                     limit: adminUser.limit || 100000,
-                    profileImg: adminUser.profile_img || 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg'
+                    profileImg: adminUser.profile_img || "https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg"
                 }
             });
         }
@@ -154,7 +158,7 @@ router.get('/me', async (req, res) => {
                     key: adminUser.key,
                     role: "admin",
                     plan: "ADMIN VIP",
-                    profile_img: adminUser.profile_img || 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg',
+                    profile_img: adminUser.profile_img || "https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg",
                     requests: {
                         today: adminUser.requestToday || 0,
                         total: adminUser.totalRequest || 0,
@@ -188,6 +192,7 @@ router.get('/me', async (req, res) => {
             }
         });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ status: false, message: "Error interno" });
     }
 });
@@ -201,64 +206,28 @@ router.post('/update-profile', async (req, res) => {
     }
 
     try {
-        // Verificar si es admin (no se puede modificar desde aquí)
+        // Verificar si es admin (no se modifica por API)
         if (adminUser && apiKey === adminUser.key) {
             return res.status(403).json({ status: false, message: "El admin solo se modifica manualmente en users.json" });
         }
 
         const user = await User.findOne({ key: apiKey });
         if (!user) {
-            return res.status(404).json({ status: false, message: "Usuario no encontrado" });
+            return res.status(404).json({ status: false, message: "Llave maestra inválida" });
         }
 
         const allowedFields = ['username', 'email', 'password', 'profile_img'];
         if (!allowedFields.includes(type)) {
-            return res.status(400).json({ status: false, message: "Campo no permitido" });
+            return res.status(400).json({ status: false, message: "Acción no permitida para este campo" });
         }
 
         user[type] = value;
         await user.save();
 
-        res.json({ status: true, message: "Perfil actualizado", field: type });
+        res.json({ status: true, message: "Protocolo actualizado", field: type });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ status: false, message: "Error interno" });
-    }
-});
-
-// ============== DASHBOARD GLOBAL ==============
-router.get('/dashboard-global', async (req, res) => {
-    try {
-        const totalUsersMongo = await User.countDocuments();
-        const totalUsers = totalUsersMongo + (adminUser ? 1 : 0);
-        
-        const topUsers = await User.find({ totalRequest: { $gt: 0 } })
-            .sort({ totalRequest: -1 })
-            .limit(5);
-        
-        const top5 = topUsers.map(u => ({
-            username: u.username,
-            total: u.totalRequest,
-            initial: u.username.charAt(0).toUpperCase()
-        }));
-
-        // Agregar admin al top si tiene requests
-        if (adminUser && adminUser.totalRequest > 0 && top5.length < 5) {
-            top5.push({
-                username: adminUser.username,
-                total: adminUser.totalRequest,
-                initial: adminUser.username.charAt(0).toUpperCase()
-            });
-        }
-
-        res.json({ 
-            status: true, 
-            totalUsers, 
-            globalRequests: 0, 
-            uptime: global.startTime || Date.now(), 
-            top5 
-        });
-    } catch (err) {
-        res.status(500).json({ status: false });
     }
 });
 
@@ -267,17 +236,74 @@ router.get('/stats', async (req, res) => {
     try {
         const mongoUsers = await User.countDocuments();
         const totalUsers = mongoUsers + (adminUser ? 1 : 0);
-        res.json({ status: true, users: totalUsers, endpoints: 50 });
+        
+        const routesPath = path.join(__dirname, '../routes');
+        let endpointCount = 0;
+        try {
+            const folders = fs.readdirSync(routesPath);
+            folders.forEach(folder => {
+                const fullPath = path.join(routesPath, folder);
+                if (fs.lstatSync(fullPath).isDirectory()) {
+                    const files = fs.readdirSync(fullPath);
+                    endpointCount += files.length;
+                }
+            });
+        } catch (e) { endpointCount = 0; }
+
+        res.json({ status: true, users: totalUsers, endpoints: endpointCount });
     } catch (err) {
         res.status(500).json({ status: false });
     }
 });
 
-// ============== ADMIN: VER TODOS (solo para admin) ==============
+// ============== DASHBOARD GLOBAL ==============
+router.get('/dashboard-global', async (req, res) => {
+    try {
+        const mongoUsers = await User.countDocuments();
+        const totalUsers = mongoUsers + (adminUser ? 1 : 0);
+        
+        // Obtener top usuarios de MongoDB
+        let topUsersMongo = await User.find({ totalRequest: { $gt: 0 } })
+            .sort({ totalRequest: -1 })
+            .limit(5);
+        
+        let topUsers = topUsersMongo.map(u => ({
+            username: u.username,
+            total: u.totalRequest,
+            initial: u.username.charAt(0).toUpperCase()
+        }));
+
+        // Si el admin tiene requests y hay espacio, agregarlo al top
+        if (adminUser && adminUser.totalRequest > 0 && topUsers.length < 5) {
+            topUsers.push({
+                username: adminUser.username,
+                total: adminUser.totalRequest,
+                initial: adminUser.username.charAt(0).toUpperCase()
+            });
+            // Reordenar por total
+            topUsers.sort((a, b) => b.total - a.total);
+        }
+
+        // Calcular requests globales
+        const globalRequestsResult = await User.aggregate([
+            { $group: { _id: null, total: { $sum: "$totalRequest" } } }
+        ]);
+        let globalRequests = globalRequestsResult[0]?.total || 0;
+        if (adminUser && adminUser.totalRequest) globalRequests += adminUser.totalRequest;
+
+        res.json({ status: true, totalUsers, globalRequests, uptime: startTime, top5: topUsers });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ status: false });
+    }
+});
+
+// ============== ADMIN: VER TODOS ==============
 router.get('/admin/all', async (req, res) => {
     const { apiKey } = req.query;
+    
     try {
-        // Verificar si es admin del JSON
+        // Verificar si es admin (primero el JSON, luego MongoDB)
         let isAdmin = false;
         if (adminUser && apiKey === adminUser.key) {
             isAdmin = true;
@@ -285,23 +311,24 @@ router.get('/admin/all', async (req, res) => {
             const adminCheck = await User.findOne({ key: apiKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-
-        if (!isAdmin) return res.status(403).json({ status: false, message: "No autorizado" });
-
-        const users = await User.find({});
         
-        // Agregar admin al listado
+        if (!isAdmin) return res.status(403).json({ status: false, message: "No autorizado" });
+        
+        const mongoUsers = await User.find({});
+        // Agregar admin al inicio si existe
         if (adminUser) {
-            users.unshift({
+            mongoUsers.unshift({
                 username: adminUser.username,
                 email: adminUser.email,
                 key: adminUser.key,
                 role: 'admin',
                 plan: 'ADMIN VIP',
-                limit: adminUser.limit
+                limit: adminUser.limit,
+                totalRequest: adminUser.totalRequest || 0
             });
         }
-        res.json({ status: true, users });
+        
+        res.json({ status: true, users: mongoUsers });
     } catch (err) {
         res.status(500).json({ status: false });
     }
@@ -310,6 +337,7 @@ router.get('/admin/all', async (req, res) => {
 // ============== ADMIN: ACTUALIZAR ==============
 router.post('/admin/update', async (req, res) => {
     const { adminKey, targetEmail, newData } = req.body;
+    
     try {
         // Verificar admin
         let isAdmin = false;
@@ -319,15 +347,19 @@ router.post('/admin/update', async (req, res) => {
             const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-
+        
         if (!isAdmin) return res.status(403).json({ status: false });
         
         // No modificar al admin del JSON
         if (adminUser && targetEmail === adminUser.email) {
             return res.status(403).json({ status: false, message: "No se puede modificar el admin desde aquí" });
         }
-
-        await User.updateOne({ email: targetEmail }, { $set: newData });
+        
+        const result = await User.updateOne({ email: targetEmail }, { $set: newData });
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ status: false });
+        }
+        
         res.json({ status: true });
     } catch (err) {
         res.status(500).json({ status: false });
@@ -337,6 +369,7 @@ router.post('/admin/update', async (req, res) => {
 // ============== ADMIN: ELIMINAR ==============
 router.post('/admin/delete', async (req, res) => {
     const { adminKey, targetEmail } = req.body;
+    
     try {
         // Verificar admin
         let isAdmin = false;
@@ -346,15 +379,19 @@ router.post('/admin/delete', async (req, res) => {
             const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-
+        
         if (!isAdmin) return res.status(403).json({ status: false });
         
         // No eliminar al admin del JSON
         if (adminUser && targetEmail === adminUser.email) {
             return res.status(403).json({ status: false, message: "No se puede eliminar el admin" });
         }
-
-        await User.deleteOne({ email: targetEmail });
+        
+        const result = await User.deleteOne({ email: targetEmail });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ status: false });
+        }
+        
         res.json({ status: true });
     } catch (err) {
         res.status(500).json({ status: false });
