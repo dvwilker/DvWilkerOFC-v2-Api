@@ -6,7 +6,7 @@ const path = require('path');
 const { generateKey } = require('../middlewares/auth');
 
 // ============== CONFIGURACIÓN ==============
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://zenith_agent:rx2CSutif3hgsjcy@dbzenithapi.sio7jth.mongodb.net/?appName=DBZenithAPI';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://DvWilkerOFC:dvwilker15@dvwilker15.xndilqb.mongodb.net/?appName=dvwilker15';
 const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
 
 // Leer admin desde JSON (TU ADMIN ORIGINAL)
