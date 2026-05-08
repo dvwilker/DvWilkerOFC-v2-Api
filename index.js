@@ -31,6 +31,8 @@ const dlIg = require('./routes/download/instagramvid');
 const dlTw = require('./routes/download/twitter');
 const dlPin = require('./routes/download/pinterest');
 const dlTt = require('./routes/download/tiktok');
+const dlYtAudio = require('./routes/download/ytaudio');
+const dlYtVideo = require('./routes/download/ytvideo');
 const userAuth = require('./routes/users');
 
 app.use('/api/auth', userAuth);
@@ -45,6 +47,8 @@ app.use('/api/download/instagram', authHandler, dlIg);
 app.use('/api/download/twitter', authHandler, dlTw);
 app.use('/api/download/pinterest', authHandler, dlPin);
 app.use('/api/download/tiktok', authHandler, dlTt);
+app.use('/api/download/ytaudio', authHandler, dlYtAudio);
+app.use('/api/download/ytvideo', authHandler, dlYtVideo);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
