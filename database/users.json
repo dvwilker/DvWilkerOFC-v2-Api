@@ -10,29 +10,5 @@
     "requestToday": 0,
     "totalRequest": 0,
     "lastRequestDate": "2026-05-07"
-  },
-  {
-    "username": "Samuelbot",
-    "email": "robloxtsu97@gmail.com",
-    "password": "samuel2009",
-    "key": "api-samuel",
-    "role": "user",
-    "plan": "USER FREE",
-    "limit": 200,
-    "requestToday": 0,
-    "totalRequest": 0,
-    "lastRequestDate": "2026-05-08"
-  },
-  {
-    "username": "DevZylJx",
-    "email": "devzyljx@gmail.com",
-    "password": "devizumi150",
-    "key": "devzyljx",
-    "role": "user",
-    "plan": "USER FREE",
-    "limit": 200,
-    "requestToday": 0,
-    "totalRequest": 0,
-    "lastRequestDate": "2026-05-08"
   }
 ]
