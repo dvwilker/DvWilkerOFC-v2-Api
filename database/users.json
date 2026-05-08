@@ -18,10 +18,10 @@
     "key": "api-samuel",
     "role": "user",
     "plan": "USER FREE",
-    "limit": 100,
+    "limit": 200,
     "requestToday": 0,
     "totalRequest": 0,
-    "lastRequestDate": "2026-05-07"
+    "lastRequestDate": "2026-05-08"
   },
   {
     "username": "DevZylJx",
@@ -30,9 +30,9 @@
     "key": "devzyljx",
     "role": "user",
     "plan": "USER FREE",
-    "limit": 100,
+    "limit": 200,
     "requestToday": 0,
     "totalRequest": 0,
-    "lastRequestDate": "2026-05-07"
+    "lastRequestDate": "2026-05-08"
   }
 ]
