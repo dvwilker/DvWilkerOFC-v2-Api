@@ -53,8 +53,20 @@
         .input-kazuma:focus { border-color: var(--neon-blue); outline: none; }
 
         .btn-blue { background: var(--neon-blue); color: #000; font-weight: 900; cursor: pointer; }
-        .btn-pay { background: #0070ba; color: white; border: none; padding: 8px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-pay:hover { background: #005c9e; transform: scale(1.02); }
+        .btn-whatsapp { 
+            background: #25D366; 
+            color: white; 
+            border: none; 
+            padding: 8px 20px; 
+            border-radius: 50px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        .btn-whatsapp:hover { 
+            background: #128C7E; 
+            transform: scale(1.02); 
+        }
 
         .plan-card { 
             background: linear-gradient(135deg, rgba(0,243,255,0.1), rgba(0,0,0,0.2)); 
@@ -111,7 +123,7 @@
             <h3 class="text-sm font-black mb-6 uppercase flex items-center gap-2">
                 <i class="fas fa-crown" style="color: gold;"></i> Mejora tu Plan
             </h3>
-            
+
             <!-- VIP - $1 USD -->
             <div class="plan-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
@@ -122,7 +134,9 @@
                     </div>
                     <div style="text-align: right;">
                         <div class="text-2xl font-bold text-green-400">$1 USD</div>
-                        <button onclick="comprarPlan('vip')" class="btn-pay mt-2"><i class="fab fa-paypal"></i> Comprar</button>
+                        <button onclick="comprarWhatsApp('VIP', 1, '1,300 solicitudes por 33 días')" class="btn-whatsapp mt-2">
+                            <i class="fab fa-whatsapp"></i> Comprar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -137,7 +151,9 @@
                     </div>
                     <div style="text-align: right;">
                         <div class="text-2xl font-bold text-green-400">$2 USD</div>
-                        <button onclick="comprarPlan('pro')" class="btn-pay mt-2"><i class="fab fa-paypal"></i> Comprar</button>
+                        <button onclick="comprarWhatsApp('PRO', 2, '2,500 solicitudes por 33 días')" class="btn-whatsapp mt-2">
+                            <i class="fab fa-whatsapp"></i> Comprar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -152,7 +168,9 @@
                     </div>
                     <div style="text-align: right;">
                         <div class="text-2xl font-bold text-green-400">$4 USD</div>
-                        <button onclick="comprarPlan('premium')" class="btn-pay mt-2"><i class="fab fa-paypal"></i> Comprar</button>
+                        <button onclick="comprarWhatsApp('PREMIUM', 4, '400,000 solicitudes por 50 días')" class="btn-whatsapp mt-2">
+                            <i class="fab fa-whatsapp"></i> Comprar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -168,7 +186,9 @@
                     <div style="text-align: right;">
                         <div class="text-2xl font-bold text-green-400">$6 USD</div>
                         <input type="number" id="customLimit" placeholder="Cantidad" min="100" style="background: rgba(0,0,0,0.5); border: 1px solid var(--neon-blue); border-radius: 10px; padding: 8px; width: 100px; margin-top: 5px; color: white;">
-                        <button onclick="comprarPlanAdmin()" class="btn-pay mt-2" style="background: linear-gradient(45deg, purple, blue);"><i class="fab fa-paypal"></i> Comprar</button>
+                        <button onclick="comprarWhatsAppAdmin()" class="btn-whatsapp mt-2" style="background: linear-gradient(45deg, purple, blue);">
+                            <i class="fab fa-whatsapp"></i> Comprar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -281,29 +301,14 @@
 
         function logout() { localStorage.clear(); window.location.href = '/login'; }
 
-        // ============== FUNCIONES DE COMPRA ==============
-        async function comprarPlan(plan) {
-            Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            try {
-                const response = await fetch('/api/payments/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apiKey: userData.key, plan: plan })
-                });
-                
-                const order = await response.json();
-                if (order.id) {
-                    window.location.href = `https://www.sandbox.paypal.com/checkoutnow?token=${order.id}`;
-                } else {
-                    Swal.fire('Error', 'No se pudo crear la orden', 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Error de conexión', 'error');
-            }
+        // ============== FUNCIONES DE WHATSAPP ==============
+        function comprarWhatsApp(plan, precio, beneficios) {
+            const mensaje = `Hola, quiero información sobre el plan ${plan} de $${precio} USD. Beneficios: ${beneficios}. Mi usuario es: ${userData.username}. Mi email es: ${userData.email}. Gracias!`;
+            const url = `https://wa.me/5492644138998?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
         }
 
-        async function comprarPlanAdmin() {
+        function comprarWhatsAppAdmin() {
             const customLimit = document.getElementById('customLimit').value;
             
             if (!customLimit || customLimit < 100) {
@@ -311,54 +316,13 @@
                 return;
             }
             
-            Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            
-            try {
-                const response = await fetch('/api/payments/create-admin-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apiKey: userData.key, customLimit: parseInt(customLimit) })
-                });
-                
-                const order = await response.json();
-                if (order.id) {
-                    window.location.href = `https://www.sandbox.paypal.com/checkoutnow?token=${order.id}`;
-                } else {
-                    Swal.fire('Error', order.error || 'No se pudo crear la orden', 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Error de conexión', 'error');
-            }
-        }
-
-        // Verificar pago al volver
-        async function verificarPago() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            const PayerID = urlParams.get('PayerID');
-            
-            if (token && PayerID) {
-                Swal.fire({ title: 'Verificando pago...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                
-                const res = await fetch('/api/payments/capture-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderId: token, apiKey: userData.key })
-                });
-                
-                const data = await res.json();
-                
-                if (data.status) {
-                    Swal.fire({ title: '🎉 PAGO EXITOSO', text: data.message, icon: 'success' }).then(() => location.reload());
-                } else {
-                    Swal.fire('Error', data.error || 'Error al verificar pago', 'error');
-                }
-            }
+            const mensaje = `Hola, quiero información sobre el plan ADMIN de $6 USD. Cantidad de solicitudes: ${customLimit}. Mi usuario es: ${userData.username}. Mi email es: ${userData.email}. Gracias!`;
+            const url = `https://wa.me/5492644138998?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
         }
 
         window.onload = () => {
             loadProfile();
-            verificarPago();
         };
     </script>
 </body>
