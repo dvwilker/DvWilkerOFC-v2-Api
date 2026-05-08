@@ -78,8 +78,6 @@
         .checkmark:after { content: ""; position: absolute; display: none; left: 6px; top: 2px; width: 5px; height: 10px; border: solid black; border-width: 0 2px 2px 0; transform: rotate(45deg); }
         .checkbox-container input:checked ~ .checkmark:after { display: block; }
 
-        /* ✅ ELIMINADO: .g-recaptcha */
-
         .theme-btn-fixed {
             position: fixed;
             top: 20px;
@@ -142,8 +140,6 @@
                 </label>
             </div>
 
-            <!-- ✅ ELIMINADO: div del reCAPTCHA -->
-
             <button type="submit" id="btnSubmit" class="btn-blue w-full py-4 rounded-xl shadow-lg mt-2 font-black">
                 Registrar Cuenta
             </button>
@@ -197,8 +193,6 @@
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // ✅ ELIMINADA: validación de reCAPTCHA
-
             const pass = document.getElementById('password').value;
             const confirm = document.getElementById('confirmPassword').value;
 
@@ -218,25 +212,28 @@
                         username: document.getElementById('username').value,
                         email: document.getElementById('email').value,
                         password: pass
-                        // ✅ ELIMINADO: captcha: captchaResponse
                     })
                 });
 
                 const data = await res.json();
 
                 if (data.status) {
+                    // Mostrar mensaje de verificación de correo
                     Swal.fire({
-                        title: 'REGISTRO EXITOSO',
-                        html: `<p>Tu cuenta ha sido creada.</p><br><p style="color:var(--neon-blue); font-weight:bold; font-size:12px;">TU API KEY: ${data.key}</p>`,
+                        title: '✅ REGISTRO EXITOSO',
+                        html: `<p>Tu cuenta ha sido creada.</p>
+                               <p style="color:var(--neon-blue); font-weight:bold;">TU API KEY: ${data.key}</p>
+                               <br>
+                               <p style="color:#ffcc00;">📧 Se ha enviado un código de verificación a tu correo.</p>
+                               <p>Revisa tu bandeja de entrada o spam para verificar tu cuenta antes de iniciar sesión.</p>`,
                         icon: 'success',
                         background: 'var(--card-bg)',
                         color: 'var(--text-main)',
-                        confirmButtonText: 'IR AL DASHBOARD',
+                        confirmButtonText: 'IR A VERIFICAR',
                         confirmButtonColor: '#00f3ff'
                     }).then(() => {
-                        // Una vez registrado, activamos la pantalla negra y vamos a Dash
                         document.getElementById('safety-overlay').style.display = 'block';
-                        window.location.href = '/dash';
+                        window.location.href = '/verify';
                     });
                 } else {
                     Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
