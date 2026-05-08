@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- ✅ ELIMINADO: script de reCAPTCHA -->
     <style>
         :root { 
             --neon-blue: #00f3ff; 
@@ -30,6 +31,7 @@
             transition: background var(--transition), color var(--transition);
         }
 
+        /* Pantalla negra absoluta de seguridad */
         #safety-overlay { 
             position: fixed; 
             top: 0; left: 0; width: 100%; height: 100%; 
@@ -65,6 +67,8 @@
         .input-kazuma:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
         .btn-blue { background: var(--neon-blue); transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; font-weight: 900; color: #000; }
         .btn-blue:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        /* ✅ ELIMINADO: .g-recaptcha */
 
         .theme-btn-fixed {
             position: fixed;
@@ -110,6 +114,8 @@
                 <i class="fas fa-eye absolute right-4 top-10 cursor-pointer text-slate-600" onclick="togglePassword('password', this)"></i>
             </div>
 
+            <!-- ✅ ELIMINADO: div del reCAPTCHA -->
+
             <button type="submit" id="btnSubmit" class="btn-blue w-full py-4 rounded-xl shadow-lg font-black">
                 Entrar al Sistema
             </button>
@@ -121,8 +127,6 @@
     </div>
 
     <script>
-        let pendingEmail = null;
-
         function toggleTheme() {
             const body = document.body;
             const themeBtn = document.getElementById('theme-btn');
@@ -137,6 +141,7 @@
             }
         }
 
+        // Blindaje de Seguridad Instantáneo
         (function initialCheck() {
             const user = localStorage.getItem('kazuma_user');
             const savedTheme = localStorage.getItem('kazuma-theme');
@@ -146,6 +151,7 @@
                 document.getElementById('theme-btn').querySelector('i').classList.replace('fa-moon', 'fa-sun');
             }
 
+            // Redirección directa al Dash si ya hay sesión (Overlay permanece negro)
             if (user) {
                 window.location.href = '/dash';
             } else {
@@ -162,31 +168,11 @@
             el.classList.toggle("fa-eye-slash");
         }
 
-        async function reenviarCodigo(email) {
-            try {
-                const res = await fetch('/api/auth/resend-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
-                });
-                const data = await res.json();
-                if (data.status) {
-                    Swal.fire({ title: 'Código reenviado', text: 'Revisa tu correo', icon: 'success', background: 'var(--card-bg)', color: 'var(--text-main)' });
-                } else {
-                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
-                }
-            } catch (err) {
-                Swal.fire({ title: 'Error', text: 'Error de conexión', icon: 'error' });
-            }
-        }
-
+        // ✅ Formulario SIN validación de reCAPTCHA
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const btn = document.getElementById('btnSubmit');
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
             btn.disabled = true;
             btn.innerText = 'AUTENTICANDO...';
 
@@ -194,35 +180,19 @@
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                        // ✅ ELIMINADO: captcha: captchaResponse
+                    })
                 });
 
                 const data = await res.json();
-
                 if (data.status) {
                     localStorage.setItem('kazuma_user', JSON.stringify(data.data));
+                    // Activar pantalla negra antes de redirigir
                     document.getElementById('safety-overlay').style.display = 'block';
                     window.location.href = '/dash';
-                } else if (data.message && data.message.includes("verificada")) {
-                    // Cuenta no verificada
-                    pendingEmail = email;
-                    Swal.fire({
-                        title: 'Cuenta no verificada',
-                        html: `Revisa tu correo <strong>${email}</strong> para verificar tu cuenta.<br><br>¿No recibiste el código?`,
-                        icon: 'warning',
-                        background: 'var(--card-bg)',
-                        color: 'var(--text-main)',
-                        showCancelButton: true,
-                        confirmButtonText: 'Reenviar código',
-                        cancelButtonText: 'Cerrar',
-                        confirmButtonColor: '#00f3ff'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            reenviarCodigo(email);
-                        }
-                    });
-                    btn.disabled = false;
-                    btn.innerText = 'Entrar al Sistema';
                 } else {
                     throw new Error(data.message || "Error de autenticación");
                 }
