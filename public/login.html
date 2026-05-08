@@ -96,7 +96,7 @@
     <div class="glass p-8 rounded-3xl w-full max-w-md">
         <div class="text-center mb-6">
             <h2 class="text-3xl font-black tracking-tighter uppercase">DVWILKER <span style="color: var(--neon-blue);">API</span></h2>
-            <p class="text-slate-500 text-[10px] mt-1 uppercase font-bold tracking-widest">Protocolo de Acceso</p>
+            <p class="text-slate-500 text-[10px] mt-1 uppercase font-bold tracking-widest">Protocolo de Acceso Kurayami</p>
         </div>
 
         <form id="loginForm" class="space-y-4">
@@ -121,6 +121,8 @@
     </div>
 
     <script>
+        let pendingEmail = null;
+
         function toggleTheme() {
             const body = document.body;
             const themeBtn = document.getElementById('theme-btn');
@@ -160,10 +162,31 @@
             el.classList.toggle("fa-eye-slash");
         }
 
+        async function reenviarCodigo(email) {
+            try {
+                const res = await fetch('/api/auth/resend-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.status) {
+                    Swal.fire({ title: 'Código reenviado', text: 'Revisa tu correo', icon: 'success', background: 'var(--card-bg)', color: 'var(--text-main)' });
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
+                }
+            } catch (err) {
+                Swal.fire({ title: 'Error', text: 'Error de conexión', icon: 'error' });
+            }
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const btn = document.getElementById('btnSubmit');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
             btn.disabled = true;
             btn.innerText = 'AUTENTICANDO...';
 
@@ -171,17 +194,35 @@
                 const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value
-                    })
+                    body: JSON.stringify({ email, password })
                 });
 
                 const data = await res.json();
+
                 if (data.status) {
                     localStorage.setItem('kazuma_user', JSON.stringify(data.data));
                     document.getElementById('safety-overlay').style.display = 'block';
                     window.location.href = '/dash';
+                } else if (data.message && data.message.includes("verificada")) {
+                    // Cuenta no verificada
+                    pendingEmail = email;
+                    Swal.fire({
+                        title: 'Cuenta no verificada',
+                        html: `Revisa tu correo <strong>${email}</strong> para verificar tu cuenta.<br><br>¿No recibiste el código?`,
+                        icon: 'warning',
+                        background: 'var(--card-bg)',
+                        color: 'var(--text-main)',
+                        showCancelButton: true,
+                        confirmButtonText: 'Reenviar código',
+                        cancelButtonText: 'Cerrar',
+                        confirmButtonColor: '#00f3ff'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            reenviarCodigo(email);
+                        }
+                    });
+                    btn.disabled = false;
+                    btn.innerText = 'Entrar al Sistema';
                 } else {
                     throw new Error(data.message || "Error de autenticación");
                 }
