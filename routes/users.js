@@ -9,19 +9,18 @@ const { generateKey } = require('../middlewares/auth');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://DvWilkerOFC:dvwilker15@dvwilker15.xndilqb.mongodb.net/?appName=dvwilker15';
 const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
 
-// Leer admin desde JSON (TU ADMIN ORIGINAL)
+// Leer admin desde JSON
 const adminPath = path.join(__dirname, '../database/users.json');
 let adminUser = null;
 try {
     const adminData = JSON.parse(fs.readFileSync(adminPath, 'utf-8'));
-    // Si es array, tomamos el primero, si es objeto directo, lo usamos
     adminUser = Array.isArray(adminData) ? adminData[0] : adminData;
     console.log('✅ Admin cargado desde JSON:', adminUser.username);
 } catch (err) {
     console.error('❌ Error cargando admin desde JSON:', err.message);
 }
 
-// Conectar a MongoDB solo para usuarios normales
+// Conectar a MongoDB
 if (mongoose.connection.readyState === 0) {
     mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
         useNewUrlParser: true,
@@ -30,7 +29,7 @@ if (mongoose.connection.readyState === 0) {
       .catch(err => console.error('❌ Error MongoDB:', err));
 }
 
-// Esquema para usuarios normales
+// Esquema para usuarios normales (con campos VIP)
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
@@ -43,14 +42,31 @@ const userSchema = new mongoose.Schema({
     totalRequest: { type: Number, default: 0 },
     profile_img: { type: String, default: 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg' },
     lastRequestDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    // NUEVOS CAMPOS PARA VIP
+    vipSince: { type: Date, default: null },
+    vipExpires: { type: Date, default: null }
 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 let startTime = Date.now();
 
-// ============== REGISTRO (solo para MongoDB) ==============
+// ============== FUNCIÓN PARA VERIFICAR EXPIRACIÓN ==============
+async function verificarExpiracion(user) {
+    if (user.vipExpires && new Date() > new Date(user.vipExpires)) {
+        user.role = 'user';
+        user.plan = 'free';
+        user.limit = 100;
+        user.vipSince = null;
+        user.vipExpires = null;
+        await user.save();
+        return true;
+    }
+    return false;
+}
+
+// ============== REGISTRO ==============
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
 
@@ -58,7 +74,6 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ status: false, message: "Faltan datos obligatorios" });
     }
 
-    // No permitir registrar el email del admin
     if (adminUser && email === adminUser.email) {
         return res.status(400).json({ status: false, message: "Este email no puede ser registrado" });
     }
@@ -90,7 +105,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// ============== LOGIN (primero admin del JSON, luego MongoDB) ==============
+// ============== LOGIN ==============
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -99,7 +114,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Verificar si es el admin del JSON
+        // Admin del JSON
         if (adminUser && email === adminUser.email && password === adminUser.password) {
             return res.json({
                 status: true,
@@ -117,10 +132,13 @@ router.post('/login', async (req, res) => {
         }
 
         // Buscar en MongoDB
-        const user = await User.findOne({ email, password });
+        let user = await User.findOne({ email, password });
         if (!user) {
             return res.status(401).json({ status: false, message: "Credenciales incorrectas" });
         }
+
+        // Verificar si expiró el plan
+        await verificarExpiracion(user);
 
         res.json({
             status: true,
@@ -147,7 +165,6 @@ router.get('/me', async (req, res) => {
     if (!apiKey) return res.status(400).json({ status: false, message: "ApiKey requerida" });
 
     try {
-        // Verificar si es el admin
         if (adminUser && apiKey === adminUser.key) {
             return res.json({
                 status: true,
@@ -169,9 +186,16 @@ router.get('/me', async (req, res) => {
             });
         }
 
-        // Buscar en MongoDB
-        const user = await User.findOne({ key: apiKey });
+        let user = await User.findOne({ key: apiKey });
         if (!user) return res.status(404).json({ status: false, message: "Usuario no encontrado" });
+
+        await verificarExpiracion(user);
+
+        // Calcular días restantes si es VIP
+        let daysLeft = 0;
+        if (user.vipExpires) {
+            daysLeft = Math.ceil((new Date(user.vipExpires) - new Date()) / (1000 * 60 * 60 * 24));
+        }
 
         res.json({
             status: true,
@@ -183,6 +207,8 @@ router.get('/me', async (req, res) => {
                 role: user.role,
                 plan: user.plan,
                 profile_img: user.profile_img,
+                vipExpires: user.vipExpires,
+                daysLeft: daysLeft,
                 requests: {
                     today: user.requestToday,
                     total: user.totalRequest,
@@ -206,7 +232,6 @@ router.post('/update-profile', async (req, res) => {
     }
 
     try {
-        // Verificar si es admin (no se modifica por API)
         if (adminUser && apiKey === adminUser.key) {
             return res.status(403).json({ status: false, message: "El admin solo se modifica manualmente en users.json" });
         }
@@ -236,21 +261,7 @@ router.get('/stats', async (req, res) => {
     try {
         const mongoUsers = await User.countDocuments();
         const totalUsers = mongoUsers + (adminUser ? 1 : 0);
-        
-        const routesPath = path.join(__dirname, '../routes');
-        let endpointCount = 0;
-        try {
-            const folders = fs.readdirSync(routesPath);
-            folders.forEach(folder => {
-                const fullPath = path.join(routesPath, folder);
-                if (fs.lstatSync(fullPath).isDirectory()) {
-                    const files = fs.readdirSync(fullPath);
-                    endpointCount += files.length;
-                }
-            });
-        } catch (e) { endpointCount = 0; }
-
-        res.json({ status: true, users: totalUsers, endpoints: endpointCount });
+        res.json({ status: true, users: totalUsers, endpoints: 50 });
     } catch (err) {
         res.status(500).json({ status: false });
     }
@@ -261,30 +272,26 @@ router.get('/dashboard-global', async (req, res) => {
     try {
         const mongoUsers = await User.countDocuments();
         const totalUsers = mongoUsers + (adminUser ? 1 : 0);
-        
-        // Obtener top usuarios de MongoDB
+
         let topUsersMongo = await User.find({ totalRequest: { $gt: 0 } })
             .sort({ totalRequest: -1 })
             .limit(5);
-        
+
         let topUsers = topUsersMongo.map(u => ({
             username: u.username,
             total: u.totalRequest,
             initial: u.username.charAt(0).toUpperCase()
         }));
 
-        // Si el admin tiene requests y hay espacio, agregarlo al top
         if (adminUser && adminUser.totalRequest > 0 && topUsers.length < 5) {
             topUsers.push({
                 username: adminUser.username,
                 total: adminUser.totalRequest,
                 initial: adminUser.username.charAt(0).toUpperCase()
             });
-            // Reordenar por total
             topUsers.sort((a, b) => b.total - a.total);
         }
 
-        // Calcular requests globales
         const globalRequestsResult = await User.aggregate([
             { $group: { _id: null, total: { $sum: "$totalRequest" } } }
         ]);
@@ -301,9 +308,8 @@ router.get('/dashboard-global', async (req, res) => {
 // ============== ADMIN: VER TODOS ==============
 router.get('/admin/all', async (req, res) => {
     const { apiKey } = req.query;
-    
+
     try {
-        // Verificar si es admin (primero el JSON, luego MongoDB)
         let isAdmin = false;
         if (adminUser && apiKey === adminUser.key) {
             isAdmin = true;
@@ -311,11 +317,10 @@ router.get('/admin/all', async (req, res) => {
             const adminCheck = await User.findOne({ key: apiKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-        
+
         if (!isAdmin) return res.status(403).json({ status: false, message: "No autorizado" });
-        
+
         const mongoUsers = await User.find({});
-        // Agregar admin al inicio si existe
         if (adminUser) {
             mongoUsers.unshift({
                 username: adminUser.username,
@@ -327,7 +332,7 @@ router.get('/admin/all', async (req, res) => {
                 totalRequest: adminUser.totalRequest || 0
             });
         }
-        
+
         res.json({ status: true, users: mongoUsers });
     } catch (err) {
         res.status(500).json({ status: false });
@@ -337,9 +342,8 @@ router.get('/admin/all', async (req, res) => {
 // ============== ADMIN: ACTUALIZAR ==============
 router.post('/admin/update', async (req, res) => {
     const { adminKey, targetEmail, newData } = req.body;
-    
+
     try {
-        // Verificar admin
         let isAdmin = false;
         if (adminUser && adminKey === adminUser.key) {
             isAdmin = true;
@@ -347,19 +351,18 @@ router.post('/admin/update', async (req, res) => {
             const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-        
+
         if (!isAdmin) return res.status(403).json({ status: false });
-        
-        // No modificar al admin del JSON
+
         if (adminUser && targetEmail === adminUser.email) {
             return res.status(403).json({ status: false, message: "No se puede modificar el admin desde aquí" });
         }
-        
+
         const result = await User.updateOne({ email: targetEmail }, { $set: newData });
         if (result.matchedCount === 0) {
             return res.status(404).json({ status: false });
         }
-        
+
         res.json({ status: true });
     } catch (err) {
         res.status(500).json({ status: false });
@@ -369,9 +372,8 @@ router.post('/admin/update', async (req, res) => {
 // ============== ADMIN: ELIMINAR ==============
 router.post('/admin/delete', async (req, res) => {
     const { adminKey, targetEmail } = req.body;
-    
+
     try {
-        // Verificar admin
         let isAdmin = false;
         if (adminUser && adminKey === adminUser.key) {
             isAdmin = true;
@@ -379,19 +381,18 @@ router.post('/admin/delete', async (req, res) => {
             const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
             isAdmin = !!adminCheck;
         }
-        
+
         if (!isAdmin) return res.status(403).json({ status: false });
-        
-        // No eliminar al admin del JSON
+
         if (adminUser && targetEmail === adminUser.email) {
             return res.status(403).json({ status: false, message: "No se puede eliminar el admin" });
         }
-        
+
         const result = await User.deleteOne({ email: targetEmail });
         if (result.deletedCount === 0) {
             return res.status(404).json({ status: false });
         }
-        
+
         res.json({ status: true });
     } catch (err) {
         res.status(500).json({ status: false });
