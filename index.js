@@ -2,9 +2,22 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { authHandler } = require('./middlewares/auth');
+const mongoose = require('mongoose'); // 👈 Agregado
 
 const app = express();
 const PORT = process.env.PORT || 3032;
+
+// 👈 Conexión a MongoDB (la misma que en users.js)
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://zenith_agent:rx2CSutif3hgsjcy@dbzenithapi.sio7jth.mongodb.net/?appName=DBZenithAPI';
+const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
+
+mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log('✅ Conectado a MongoDB Atlas');
+    global.startTime = Date.now(); // 👈 Para el uptime
+}).catch(err => console.error('❌ Error MongoDB:', err));
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -55,5 +68,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`DvWilkerOFC API escuchando en el puerto ${PORT}`);
+    console.log(`🚀 DvWilkerOFC API escuchando en el puerto ${PORT}`);
 });
