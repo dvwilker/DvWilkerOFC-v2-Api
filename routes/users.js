@@ -3,11 +3,10 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const { generateKey } = require('../middlewares/auth');
 
-// ✅ TU CADENA DE CONEXIÓN
-const MONGODB_URI = 'mongodb+srv://zenith_agent:rx2CSutif3hgsjcy@dbzenithapi.sio7jth.mongodb.net/?appName=DBZenithAPI';
-const MONGODB_DB = 'wilker_api';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://zenith_agent:rx2CSutif3hgsjcy@dbzenithapi.sio7jth.mongodb.net/?appName=DBZenithAPI';
+const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
 
-// Conectar a MongoDB solo si no está conectado
+// Conectar a MongoDB
 if (mongoose.connection.readyState === 0) {
     mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
         useNewUrlParser: true,
@@ -16,7 +15,7 @@ if (mongoose.connection.readyState === 0) {
       .catch(err => console.error('❌ Error MongoDB:', err));
 }
 
-// 📌 Definir el esquema del Usuario
+// Esquema de Usuario
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
@@ -32,8 +31,43 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// 📌 Crear el modelo (si ya existe, lo reusa)
 const User = mongoose.models.User || mongoose.model('User', userSchema);
+
+// ============== CREAR ADMIN POR DEFECTO ==============
+async function crearAdminSiNoExiste() {
+    try {
+        const adminExiste = await User.findOne({ role: 'admin' });
+        
+        if (!adminExiste) {
+            const admin = new User({
+                username: "DvWilkerOFC",
+                email: "developer.wilker.ofc@gmail.com",
+                password: "DvWilkerOFC",
+                key: "dwwalkerofc",
+                role: "admin",
+                plan: "ADMIN VIP",
+                limit: 100000,
+                requestToday: 0,
+                totalRequest: 0,
+                lastRequestDate: new Date().toISOString().split('T')[0]
+            });
+            await admin.save();
+            console.log('=========================================');
+            console.log('✅ ADMIN CREADO AUTOMÁTICAMENTE');
+            console.log('📧 Email: developer.wilker.ofc@gmail.com');
+            console.log('🔑 Password: DvWilkerOFC');
+            console.log('🔐 API Key: dvwilkerofc');
+            console.log('=========================================');
+        }
+    } catch (err) {
+        console.error('❌ Error al crear admin:', err);
+    }
+}
+
+// Ejecutar creación de admin al iniciar
+setTimeout(() => {
+    crearAdminSiNoExiste();
+}, 2000);
 
 // ============== REGISTRO ==============
 router.post('/register', async (req, res) => {
@@ -44,7 +78,6 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        // Verificar si ya existe
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
             return res.status(400).json({ status: false, message: "El correo o usuario ya existe" });
@@ -60,13 +93,11 @@ router.post('/register', async (req, res) => {
             limit: 100,
             requestToday: 0,
             totalRequest: 0,
-            profile_img: "https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg",
             lastRequestDate: new Date().toISOString().split('T')[0]
         });
 
         await newUser.save();
-
-        res.json({ status: true, creator: "Félix Ofc", message: "Registro exitoso", key: newUser.key });
+        res.json({ status: true, creator: "The king Wilker", message: "Registro exitoso", key: newUser.key });
     } catch (err) {
         console.error(err);
         res.status(500).json({ status: false, message: "Error en el servidor durante el registro" });
@@ -158,7 +189,7 @@ router.post('/update-profile', async (req, res) => {
             return res.status(400).json({ status: false, message: "Acción no permitida para este campo" });
         }
 
-        if (user.email === 'frasesbebor@gmail.com' && type === 'password') {
+        if (user.email === 'developer.wilker.ofc@gmail.com' && type === 'password') {
             return res.status(403).json({ status: false, message: "No puedes cambiar la contraseña del ADMIN raíz" });
         }
 
@@ -175,34 +206,21 @@ router.post('/update-profile', async (req, res) => {
 router.get('/stats', async (req, res) => {
     try {
         const userCount = await User.countDocuments();
-        const routesPath = path.join(__dirname, '../routes');
-        let endpointCount = 0;
-
-        try {
-            const folders = fs.readdirSync(routesPath);
-            folders.forEach(folder => {
-                const fullPath = path.join(routesPath, folder);
-                if (fs.lstatSync(fullPath).isDirectory()) {
-                    const files = fs.readdirSync(fullPath);
-                    endpointCount += files.length;
-                }
-            });
-        } catch (e) { endpointCount = 0; }
-
-        res.json({ status: true, users: userCount, endpoints: endpointCount });
+        res.json({ status: true, users: userCount, endpoints: 50 });
     } catch (err) {
-        res.status(500).json({ status: false, message: "Error interno" });
+        res.status(500).json({ status: false });
     }
 });
 
 // ============== DASHBOARD GLOBAL ==============
 router.get('/dashboard-global', async (req, res) => {
     try {
-        const startTime = global.startTime || Date.now();
         const totalUsers = await User.countDocuments();
+        const topUsers = await User.find({ totalRequest: { $gt: 0 } })
+            .sort({ totalRequest: -1 })
+            .limit(5);
         
-        const users = await User.find({ totalRequest: { $gt: 0 } }).sort({ totalRequest: -1 }).limit(5);
-        const top5 = users.map(u => ({
+        const top5 = topUsers.map(u => ({
             username: u.username,
             total: u.totalRequest,
             initial: u.username.charAt(0).toUpperCase()
@@ -213,9 +231,9 @@ router.get('/dashboard-global', async (req, res) => {
         ]);
         const globalRequests = globalRequestsResult[0]?.total || 0;
 
-        res.json({ status: true, totalUsers, globalRequests, uptime: startTime, top5 });
+        res.json({ status: true, totalUsers, globalRequests, uptime: global.startTime || Date.now(), top5 });
     } catch (err) {
-        res.status(500).json({ status: false, message: "Error interno" });
+        res.status(500).json({ status: false });
     }
 });
 
@@ -238,7 +256,7 @@ router.post('/admin/update', async (req, res) => {
     const { adminKey, targetEmail, newData } = req.body;
     try {
         const admin = await User.findOne({ key: adminKey, role: 'admin' });
-        if (!admin || targetEmail === 'frasesbebor@gmail.com') {
+        if (!admin || targetEmail === 'developer.wilker.ofc@gmail.com') {
             return res.status(403).json({ status: false });
         }
 
@@ -254,7 +272,7 @@ router.post('/admin/delete', async (req, res) => {
     const { adminKey, targetEmail } = req.body;
     try {
         const admin = await User.findOne({ key: adminKey, role: 'admin' });
-        if (!admin || targetEmail === 'frasesbebor@gmail.com') {
+        if (!admin || targetEmail === 'developer.wilker.ofc@gmail.com') {
             return res.status(403).json({ status: false });
         }
 
