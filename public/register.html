@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- ✅ ELIMINADO: script de reCAPTCHA -->
     <style>
         :root { 
             --neon-blue: #00f3ff; 
@@ -31,7 +30,6 @@
             transition: background var(--transition), color var(--transition);
         }
 
-        /* Pantalla de seguridad absoluta (Negro puro) */
         #safety-overlay { 
             position: fixed; 
             top: 0; left: 0; width: 100%; height: 100%; 
@@ -168,22 +166,18 @@
             }
         }
 
-        // Blindaje de Seguridad Instantáneo
         (function initialCheck() {
             const user = localStorage.getItem('kazuma_user');
             const savedTheme = localStorage.getItem('kazuma-theme');
 
-            // Cargar Tema
             if (savedTheme === 'light') {
                 document.body.classList.add('light-mode');
                 document.getElementById('theme-btn').querySelector('i').classList.replace('fa-moon', 'fa-sun');
             }
 
-            // Si hay sesión, redirección directa a Dash (Overlay permanece negro)
             if (user) {
                 window.location.href = '/dash';
             } else {
-                // Solo si no hay sesión, mostramos el contenido tras cargar
                 window.onload = () => { 
                     document.getElementById('safety-overlay').style.display = 'none'; 
                 };
@@ -218,22 +212,17 @@
                 const data = await res.json();
 
                 if (data.status) {
-                    // Mostrar mensaje de verificación de correo
                     Swal.fire({
-                        title: '✅ REGISTRO EXITOSO',
-                        html: `<p>Tu cuenta ha sido creada.</p>
-                               <p style="color:var(--neon-blue); font-weight:bold;">TU API KEY: ${data.key}</p>
-                               <br>
-                               <p style="color:#ffcc00;">📧 Se ha enviado un código de verificación a tu correo.</p>
-                               <p>Revisa tu bandeja de entrada o spam para verificar tu cuenta antes de iniciar sesión.</p>`,
+                        title: 'REGISTRO EXITOSO',
+                        html: `<p>Tu cuenta ha sido creada.</p><br><p style="color:var(--neon-blue); font-weight:bold; font-size:12px;">TU API KEY: ${data.key}</p>`,
                         icon: 'success',
                         background: 'var(--card-bg)',
                         color: 'var(--text-main)',
-                        confirmButtonText: 'IR A VERIFICAR',
+                        confirmButtonText: 'IR AL DASHBOARD',
                         confirmButtonColor: '#00f3ff'
                     }).then(() => {
                         document.getElementById('safety-overlay').style.display = 'block';
-                        window.location.href = '/verify';
+                        window.location.href = '/dash';
                     });
                 } else {
                     Swal.fire({ title: 'Error', text: data.message, icon: 'error', background: 'var(--card-bg)', color: 'var(--text-main)' });
