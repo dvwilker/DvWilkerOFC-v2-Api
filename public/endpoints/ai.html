@@ -76,7 +76,7 @@
 
     <header class="p-4 flex justify-between items-center sticky top-0 z-50">
         <div class="font-black text-xl tracking-tighter cursor-pointer" onclick="location.href='/dash'">
-            KAZUMA <span style="color: var(--neon-blue)">DASH</span>
+            DVWILKER <span style="color: var(--neon-blue)">DASH</span>
         </div>
         <div class="flex items-center gap-4">
             <div class="text-xl cursor-pointer" style="color: var(--neon-blue)" onclick="toggleTheme()" id="theme-btn">
@@ -138,7 +138,7 @@
             const body = document.body;
             const isLight = body.classList.toggle('light-mode');
             document.getElementById('theme-btn').querySelector('i').classList.replace(isLight ? 'fa-moon' : 'fa-sun', isLight ? 'fa-sun' : 'fa-moon');
-            localStorage.setItem('kazuma-theme', isLight ? 'light' : 'dark');
+            localStorage.setItem('dvwilker-theme', isLight ? 'light' : 'dark');
         }
 
         async function testAi(id, route) {
