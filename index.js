@@ -54,6 +54,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Ruta para la página de verificación
+app.get('/verify', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+});
+
 app.get('/:page', (req, res, next) => {
     const page = req.params.page;
     const filePath = path.join(__dirname, 'public', `${page}.html`);
