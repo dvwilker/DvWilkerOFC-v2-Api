@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- ✅ ELIMINADO: script de reCAPTCHA -->
     <style>
         :root { 
             --neon-blue: #00f3ff; 
@@ -30,6 +31,7 @@
             transition: background var(--transition), color var(--transition);
         }
 
+        /* Pantalla de seguridad absoluta (Negro puro) */
         #safety-overlay { 
             position: fixed; 
             top: 0; left: 0; width: 100%; height: 100%; 
@@ -75,6 +77,8 @@
         .checkbox-container input:checked ~ .checkmark { background-color: var(--neon-blue); border-color: var(--neon-blue); }
         .checkmark:after { content: ""; position: absolute; display: none; left: 6px; top: 2px; width: 5px; height: 10px; border: solid black; border-width: 0 2px 2px 0; transform: rotate(45deg); }
         .checkbox-container input:checked ~ .checkmark:after { display: block; }
+
+        /* ✅ ELIMINADO: .g-recaptcha */
 
         .theme-btn-fixed {
             position: fixed;
@@ -138,6 +142,8 @@
                 </label>
             </div>
 
+            <!-- ✅ ELIMINADO: div del reCAPTCHA -->
+
             <button type="submit" id="btnSubmit" class="btn-blue w-full py-4 rounded-xl shadow-lg mt-2 font-black">
                 Registrar Cuenta
             </button>
@@ -166,18 +172,22 @@
             }
         }
 
+        // Blindaje de Seguridad Instantáneo
         (function initialCheck() {
             const user = localStorage.getItem('kazuma_user');
             const savedTheme = localStorage.getItem('kazuma-theme');
 
+            // Cargar Tema
             if (savedTheme === 'light') {
                 document.body.classList.add('light-mode');
                 document.getElementById('theme-btn').querySelector('i').classList.replace('fa-moon', 'fa-sun');
             }
 
+            // Si hay sesión, redirección directa a Dash (Overlay permanece negro)
             if (user) {
                 window.location.href = '/dash';
             } else {
+                // Solo si no hay sesión, mostramos el contenido tras cargar
                 window.onload = () => { 
                     document.getElementById('safety-overlay').style.display = 'none'; 
                 };
@@ -186,6 +196,8 @@
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // ✅ ELIMINADA: validación de reCAPTCHA
 
             const pass = document.getElementById('password').value;
             const confirm = document.getElementById('confirmPassword').value;
@@ -206,6 +218,7 @@
                         username: document.getElementById('username').value,
                         email: document.getElementById('email').value,
                         password: pass
+                        // ✅ ELIMINADO: captcha: captchaResponse
                     })
                 });
 
@@ -221,6 +234,7 @@
                         confirmButtonText: 'IR AL DASHBOARD',
                         confirmButtonColor: '#00f3ff'
                     }).then(() => {
+                        // Una vez registrado, activamos la pantalla negra y vamos a Dash
                         document.getElementById('safety-overlay').style.display = 'block';
                         window.location.href = '/dash';
                     });
