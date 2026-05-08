@@ -32,10 +32,8 @@ const dlTw = require('./routes/download/twitter');
 const dlPin = require('./routes/download/pinterest');
 const dlTt = require('./routes/download/tiktok');
 const userAuth = require('./routes/users');
-const payments = require('./routes/payments'); // 👈 NUEVO
 
 app.use('/api/auth', userAuth);
-app.use('/api/payments', authHandler, payments); // 👈 NUEVO
 
 app.use('/api/ai/gemini', authHandler, aiGemini);
 app.use('/api/tools/qr', authHandler, toolQr);
