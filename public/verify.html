@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Cuenta | DvWilkerOFC</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #09090b; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-[#11111d] p-8 rounded-3xl max-w-md w-full border border-[#00f3ff]/20">
+        <h2 class="text-2xl font-black text-white text-center mb-6">Verificar Cuenta</h2>
+        <form id="verifyForm" class="space-y-4">
+            <input type="email" id="email" class="w-full p-3 rounded-xl bg-black/20 border border-white/10 text-white" placeholder="Email" required>
+            <input type="text" id="code" class="w-full p-3 rounded-xl bg-black/20 border border-white/10 text-white" placeholder="Código de verificación" required>
+            <button type="submit" class="w-full bg-[#00f3ff] text-black p-3 rounded-xl font-bold">Verificar cuenta</button>
+        </form>
+        <p class="text-center text-slate-500 text-sm mt-4">
+            ¿No recibiste el código? <a href="#" id="resendLink" class="text-[#00f3ff]">Reenviar</a>
+        </p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailParam = urlParams.get('email');
+        const codeParam = urlParams.get('code');
+        
+        if (emailParam) document.getElementById('email').value = emailParam;
+        if (codeParam) document.getElementById('code').value = codeParam;
+        
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const code = document.getElementById('code').value;
+            
+            const res = await fetch('/api/auth/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+            
+            const data = await res.json();
+            if (data.status) {
+                Swal.fire({ title: '¡Éxito!', text: 'Cuenta verificada. Ya puedes iniciar sesión.', icon: 'success' }).then(() => {
+                    window.location.href = '/login';
+                });
+            } else {
+                Swal.fire({ title: 'Error', text: data.message, icon: 'error' });
+            }
+        });
+        
+        document.getElementById('resendLink').addEventListener('click', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            if (!email) return Swal.fire('Error', 'Ingresa tu email primero', 'error');
+            
+            const res = await fetch('/api/auth/resend-code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            
+            const data = await res.json();
+            Swal.fire(data.status ? 'Enviado' : 'Error', data.message, data.status ? 'success' : 'error');
+        });
+    </script>
+</body>
+</html>
