@@ -48,7 +48,7 @@ sudo ln -s /etc/nginx/sites-available/dvwilker-api /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl restart nginx
 
-sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --m frasesbebor@gmail.com
+sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --m developer.wilker.ofc@gmail.com
 
 pm2 start index.js --name "dvwilker-api"
 pm2 save
