@@ -2,21 +2,13 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { authHandler } = require('./middlewares/auth');
-const mongoose = require('mongoose');
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3032;
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://DvWilkerOFC:dvwilker15@dvwilker15.xndilqb.mongodb.net/?appName=dvwilker15';
-const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
-
-mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('✅ Conectado a MongoDB Atlas');
-    global.startTime = Date.now();
-}).catch(err => console.error('❌ Error MongoDB:', err));
+console.log('✅ Base de datos JSON iniciada');
+global.startTime = Date.now();
 
 app.set('trust proxy', 1);
 app.use(express.json());
@@ -36,7 +28,6 @@ const dlYtVideo = require('./routes/download/ytvideo');
 const userAuth = require('./routes/users');
 
 app.use('/api/auth', userAuth);
-
 app.use('/api/ai/gemini', authHandler, aiGemini);
 app.use('/api/tools/qr', authHandler, toolQr);
 app.use('/api/tools/ssweb', authHandler, toolSsweb);
