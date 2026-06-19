@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kazuma | Perfil</title>
+    <title>DvWilkerOFC | Perfil</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -118,80 +118,14 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE PLANES VIP -->
-        <div class="glass rounded-[32px] p-8 mt-8">
-            <h3 class="text-sm font-black mb-6 uppercase flex items-center gap-2">
-                <i class="fas fa-crown" style="color: gold;"></i> Mejora tu Plan
+        <!-- BOTÓN PARA IR A LA TIENDA -->
+        <div class="glass rounded-[32px] p-6 mt-8 text-center">
+            <h3 class="text-sm font-black mb-4 uppercase flex items-center justify-center gap-2">
+                <i class="fas fa-crown" style="color: gold;"></i> ¿Quieres más solicitudes?
             </h3>
-
-            <!-- VIP - $1 USD -->
-            <div class="plan-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <h3 class="text-xl font-black">💎 VIP</h3>
-                        <p class="text-sm text-slate-400">1,300 solicitudes / día</p>
-                        <p class="text-xs text-slate-500">⏱️ 33 días de duración</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="text-2xl font-bold text-green-400">$1 USD</div>
-                        <button onclick="comprarWhatsApp('VIP', 1, '1,300 solicitudes por 33 días')" class="btn-whatsapp mt-2">
-                            <i class="fab fa-whatsapp"></i> Comprar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PRO - $2 USD -->
-            <div class="plan-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <h3 class="text-xl font-black">⚡ PRO</h3>
-                        <p class="text-sm text-slate-400">2,500 solicitudes / día</p>
-                        <p class="text-xs text-slate-500">⏱️ 33 días de duración</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="text-2xl font-bold text-green-400">$2 USD</div>
-                        <button onclick="comprarWhatsApp('PRO', 2, '2,500 solicitudes por 33 días')" class="btn-whatsapp mt-2">
-                            <i class="fab fa-whatsapp"></i> Comprar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PREMIUM - $4 USD -->
-            <div class="plan-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <h3 class="text-xl font-black">👑 PREMIUM</h3>
-                        <p class="text-sm text-slate-400">400,000 solicitudes / día</p>
-                        <p class="text-xs text-slate-500">⏱️ 50 días de duración</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="text-2xl font-bold text-green-400">$4 USD</div>
-                        <button onclick="comprarWhatsApp('PREMIUM', 4, '400,000 solicitudes por 50 días')" class="btn-whatsapp mt-2">
-                            <i class="fab fa-whatsapp"></i> Comprar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ADMIN - $6 USD (con selector de cantidad) -->
-            <div class="plan-card" style="background: linear-gradient(135deg, rgba(128,0,255,0.15), rgba(0,0,0,0.2));">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <h3 class="text-xl font-black">🔥 ADMIN</h3>
-                        <p class="text-sm text-slate-400">¡Tú eliges la cantidad!</p>
-                        <p class="text-xs text-slate-500">⏱️ 33 días de duración</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="text-2xl font-bold text-green-400">$6 USD</div>
-                        <input type="number" id="customLimit" placeholder="Cantidad" min="100" style="background: rgba(0,0,0,0.5); border: 1px solid var(--neon-blue); border-radius: 10px; padding: 8px; width: 100px; margin-top: 5px; color: white;">
-                        <button onclick="comprarWhatsAppAdmin()" class="btn-whatsapp mt-2" style="background: linear-gradient(45deg, purple, blue);">
-                            <i class="fab fa-whatsapp"></i> Comprar
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <button onclick="location.href='/shop'" class="btn-blue px-8 py-4 rounded-2xl text-sm font-black uppercase">
+                <i class="fas fa-shopping-cart mr-2"></i> Ir a la Tienda
+            </button>
         </div>
 
         <!-- EDITAR DATOS -->
