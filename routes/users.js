@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const { generateKey } = require('../middlewares/auth');
+const { findUser, createUser, getAllUsers, updateUser, deleteUser } = require('../db');
 
 // ============== CONFIGURACIÓN ==============
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://DvWilkerOFC:dvwilker15@dvwilker15.xndilqb.mongodb.net/?appName=dvwilker15';
-const MONGODB_DB = process.env.MONGODB_DB || 'wilker_api';
-
-// Leer admin desde JSON
 const adminPath = path.join(__dirname, '../database/users.json');
 let adminUser = null;
 try {
@@ -20,46 +16,17 @@ try {
     console.error('❌ Error cargando admin desde JSON:', err.message);
 }
 
-// Conectar a MongoDB
-if (mongoose.connection.readyState === 0) {
-    mongoose.connect(`${MONGODB_URI}/${MONGODB_DB}`, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }).then(() => console.log('✅ Conectado a MongoDB Atlas'))
-      .catch(err => console.error('❌ Error MongoDB:', err));
-}
-
-// Esquema para usuarios
-const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    key: { type: String, required: true, unique: true },
-    role: { type: String, default: 'user' },
-    plan: { type: String, default: 'free' },
-    limit: { type: Number, default: 100 },
-    requestToday: { type: Number, default: 0 },
-    totalRequest: { type: Number, default: 0 },
-    profile_img: { type: String, default: 'https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg' },
-    lastRequestDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
-    createdAt: { type: Date, default: Date.now },
-    vipSince: { type: Date, default: null },
-    vipExpires: { type: Date, default: null }
-});
-
-const User = mongoose.models.User || mongoose.model('User', userSchema);
-
 let startTime = Date.now();
 
 // ============== FUNCIÓN PARA VERIFICAR EXPIRACIÓN ==============
-async function verificarExpiracion(user) {
+function verificarExpiracion(user) {
     if (user.vipExpires && new Date() > new Date(user.vipExpires)) {
         user.role = 'user';
         user.plan = 'free';
         user.limit = 100;
         user.vipSince = null;
         user.vipExpires = null;
-        await user.save();
+        updateUser(user.id, user);
         return true;
     }
     return false;
@@ -78,12 +45,12 @@ router.post('/register', async (req, res) => {
     }
 
     try {
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        const existingUser = findUser('email', email) || findUser('username', username);
         if (existingUser) {
             return res.status(400).json({ status: false, message: "El correo o usuario ya existe" });
         }
 
-        const newUser = new User({
+        const newUser = createUser({
             username,
             email,
             password,
@@ -93,10 +60,13 @@ router.post('/register', async (req, res) => {
             limit: 100,
             requestToday: 0,
             totalRequest: 0,
-            lastRequestDate: new Date().toISOString().split('T')[0]
+            lastRequestDate: new Date().toISOString().split('T')[0],
+            profile_img: "https://raw.githubusercontent.com/dvwilker/gohan-storage/main/1778169562859-IMG-20260504-WA0386.jpg",
+            createdAt: new Date().toISOString(),
+            vipSince: null,
+            vipExpires: null
         });
 
-        await newUser.save();
         res.json({ status: true, creator: "Félix Ofc", message: "Registro exitoso", key: newUser.key });
     } catch (err) {
         console.error(err);
@@ -113,7 +83,6 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Admin del JSON
         if (adminUser && email === adminUser.email && password === adminUser.password) {
             return res.json({
                 status: true,
@@ -130,13 +99,12 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // Buscar en MongoDB
-        let user = await User.findOne({ email, password });
-        if (!user) {
+        let user = findUser('email', email);
+        if (!user || user.password !== password) {
             return res.status(401).json({ status: false, message: "Credenciales incorrectas" });
         }
 
-        await verificarExpiracion(user);
+        verificarExpiracion(user);
 
         res.json({
             status: true,
@@ -184,10 +152,10 @@ router.get('/me', async (req, res) => {
             });
         }
 
-        let user = await User.findOne({ key: apiKey });
+        let user = findUser('key', apiKey);
         if (!user) return res.status(404).json({ status: false, message: "Usuario no encontrado" });
 
-        await verificarExpiracion(user);
+        verificarExpiracion(user);
 
         let daysLeft = 0;
         if (user.vipExpires) {
@@ -228,7 +196,6 @@ router.post('/update-profile', async (req, res) => {
         return res.status(400).json({ status: false, message: "Faltan parámetros" });
     }
 
-    // 🚫 BLOQUEAR CAMPOS PROHIBIDOS - SOLO ADMIN PUEDE CAMBIAR ESTO
     const forbiddenFields = ['role', 'plan', 'limit', 'vipSince', 'vipExpires', 'totalRequest', 'requestToday', 'key', 'verified'];
     if (forbiddenFields.includes(type)) {
         return res.status(403).json({ 
@@ -242,19 +209,18 @@ router.post('/update-profile', async (req, res) => {
             return res.status(403).json({ status: false, message: "El admin solo se modifica manualmente en users.json" });
         }
 
-        const user = await User.findOne({ key: apiKey });
+        let user = findUser('key', apiKey);
         if (!user) {
             return res.status(404).json({ status: false, message: "Llave maestra inválida" });
         }
 
-        // Solo permitir editar estos campos básicos
         const allowedFields = ['username', 'email', 'password', 'profile_img'];
         if (!allowedFields.includes(type)) {
             return res.status(400).json({ status: false, message: "Acción no permitida para este campo" });
         }
 
         user[type] = value;
-        await user.save();
+        updateUser(user.id, user);
 
         res.json({ status: true, message: "Protocolo actualizado", field: type });
     } catch (err) {
@@ -266,8 +232,8 @@ router.post('/update-profile', async (req, res) => {
 // ============== ESTADÍSTICAS ==============
 router.get('/stats', async (req, res) => {
     try {
-        const mongoUsers = await User.countDocuments();
-        const totalUsers = mongoUsers + (adminUser ? 1 : 0);
+        const allUsers = getAllUsers();
+        const totalUsers = allUsers.length + (adminUser ? 1 : 0);
         res.json({ status: true, users: totalUsers, endpoints: 50 });
     } catch (err) {
         res.status(500).json({ status: false });
@@ -277,18 +243,18 @@ router.get('/stats', async (req, res) => {
 // ============== DASHBOARD GLOBAL ==============
 router.get('/dashboard-global', async (req, res) => {
     try {
-        const mongoUsers = await User.countDocuments();
-        const totalUsers = mongoUsers + (adminUser ? 1 : 0);
+        const allUsers = getAllUsers();
+        const totalUsers = allUsers.length + (adminUser ? 1 : 0);
 
-        let topUsersMongo = await User.find({ totalRequest: { $gt: 0 } })
-            .sort({ totalRequest: -1 })
-            .limit(5);
-
-        let topUsers = topUsersMongo.map(u => ({
-            username: u.username,
-            total: u.totalRequest,
-            initial: u.username.charAt(0).toUpperCase()
-        }));
+        let topUsers = allUsers
+            .filter(u => u.totalRequest > 0)
+            .sort((a, b) => b.totalRequest - a.totalRequest)
+            .slice(0, 5)
+            .map(u => ({
+                username: u.username,
+                total: u.totalRequest,
+                initial: u.username.charAt(0).toUpperCase()
+            }));
 
         if (adminUser && adminUser.totalRequest > 0 && topUsers.length < 5) {
             topUsers.push({
@@ -299,10 +265,7 @@ router.get('/dashboard-global', async (req, res) => {
             topUsers.sort((a, b) => b.total - a.total);
         }
 
-        const globalRequestsResult = await User.aggregate([
-            { $group: { _id: null, total: { $sum: "$totalRequest" } } }
-        ]);
-        let globalRequests = globalRequestsResult[0]?.total || 0;
+        let globalRequests = allUsers.reduce((sum, u) => sum + (u.totalRequest || 0), 0);
         if (adminUser && adminUser.totalRequest) globalRequests += adminUser.totalRequest;
 
         res.json({ status: true, totalUsers, globalRequests, uptime: startTime, top5: topUsers });
@@ -321,15 +284,15 @@ router.get('/admin/all', async (req, res) => {
         if (adminUser && apiKey === adminUser.key) {
             isAdmin = true;
         } else {
-            const adminCheck = await User.findOne({ key: apiKey, role: 'admin' });
-            isAdmin = !!adminCheck;
+            const user = findUser('key', apiKey);
+            isAdmin = user && user.role === 'admin';
         }
 
         if (!isAdmin) return res.status(403).json({ status: false, message: "No autorizado" });
 
-        const mongoUsers = await User.find({});
+        let allUsers = getAllUsers();
         if (adminUser) {
-            mongoUsers.unshift({
+            allUsers.unshift({
                 username: adminUser.username,
                 email: adminUser.email,
                 key: adminUser.key,
@@ -340,7 +303,7 @@ router.get('/admin/all', async (req, res) => {
             });
         }
 
-        res.json({ status: true, users: mongoUsers });
+        res.json({ status: true, users: allUsers });
     } catch (err) {
         res.status(500).json({ status: false });
     }
@@ -355,8 +318,8 @@ router.post('/admin/update', async (req, res) => {
         if (adminUser && adminKey === adminUser.key) {
             isAdmin = true;
         } else {
-            const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
-            isAdmin = !!adminCheck;
+            const user = findUser('key', adminKey);
+            isAdmin = user && user.role === 'admin';
         }
 
         if (!isAdmin) return res.status(403).json({ status: false });
@@ -365,10 +328,13 @@ router.post('/admin/update', async (req, res) => {
             return res.status(403).json({ status: false, message: "No se puede modificar el admin desde aquí" });
         }
 
-        const result = await User.updateOne({ email: targetEmail }, { $set: newData });
-        if (result.matchedCount === 0) {
+        let user = findUser('email', targetEmail);
+        if (!user) {
             return res.status(404).json({ status: false });
         }
+
+        Object.assign(user, newData);
+        updateUser(user.id, user);
 
         res.json({ status: true });
     } catch (err) {
@@ -385,8 +351,8 @@ router.post('/admin/delete', async (req, res) => {
         if (adminUser && adminKey === adminUser.key) {
             isAdmin = true;
         } else {
-            const adminCheck = await User.findOne({ key: adminKey, role: 'admin' });
-            isAdmin = !!adminCheck;
+            const user = findUser('key', adminKey);
+            isAdmin = user && user.role === 'admin';
         }
 
         if (!isAdmin) return res.status(403).json({ status: false });
@@ -395,11 +361,12 @@ router.post('/admin/delete', async (req, res) => {
             return res.status(403).json({ status: false, message: "No se puede eliminar el admin" });
         }
 
-        const result = await User.deleteOne({ email: targetEmail });
-        if (result.deletedCount === 0) {
+        const user = findUser('email', targetEmail);
+        if (!user) {
             return res.status(404).json({ status: false });
         }
 
+        deleteUser(user.id);
         res.json({ status: true });
     } catch (err) {
         res.status(500).json({ status: false });
