@@ -2,10 +2,10 @@ const express = require('express');
 const path = require('path');
 require('dotenv').config();
 const { authHandler } = require('./middlewares/auth');
-const db = require('./db');
+
 
 const app = express();
-const PORT = process.env.PORT || 3032;
+const PORT = process.env.PORT || 24606;
 
 console.log('✅ Base de datos JSON iniciada');
 global.startTime = Date.now();
