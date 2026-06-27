@@ -5,7 +5,7 @@ const { authHandler } = require('./middlewares/auth');
 
 
 const app = express();
-const PORT = process.env.PORT || 24606;
+const PORT = process.env.PORT || 24639;
 
 console.log('✅ Base de datos JSON iniciada');
 global.startTime = Date.now();
